@@ -1,0 +1,78 @@
+body {
+    background-color: #222;
+    color: #fff;
+    font-family: monospace, sans-serif; /* Usamos monospace para um visual retro */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+#game-container {
+    width: 90%;
+    max-width: 600px;
+    border: 5px solid #888;
+    background-color: #333;
+    padding: 10px;
+    box-shadow: 0 0 0 5px black, 0 0 0 10px #888; /* Simula uma borda dupla */
+}
+
+/* --- Barra de Status --- */
+#status-bar {
+    background-color: #000;
+    color: #0f0; /* Texto verde neon para um visual retro/terminal */
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 2px solid #0f0;
+    display: flex;
+    justify-content: space-around;
+}
+
+/* --- Cena do Jogo --- */
+#game-scene {
+    background-color: #111;
+    border: 3px solid #666;
+    padding: 15px;
+    min-height: 150px;
+    margin-bottom: 15px;
+}
+
+#scene-image {
+    width: 64px;
+    height: 64px;
+    background-color: #444; /* Cor de fundo para o "pixel art" */
+    margin: 0 auto 10px;
+    border: 2px solid #fff;
+    /* Efeito de pixel art: aqui você usaria uma imagem ou background-image */
+    /* Para simular: */
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5); 
+}
+
+/* --- Botões de Ação --- */
+#action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.action-btn {
+    background-color: #555;
+    color: #fff;
+    border: 2px solid #ccc;
+    padding: 10px;
+    font-size: 16px;
+    font-family: monospace, sans-serif;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    text-transform: uppercase;
+}
+
+.action-btn:hover {
+    background-color: #777;
+    border-color: yellow;
+}
+
+.action-btn:active {
+    background-color: #333;
+}
