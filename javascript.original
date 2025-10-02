@@ -1,0 +1,206 @@
+// --- ESTADO DO JOGO ---
+let player = {
+    hp: 100,
+    maxHp: 100,
+    attack: 10,
+    gold: 0,
+    isFighting: false
+};
+
+const monster = {
+    name: "Slime",
+    hp: 30,
+    attack: 5,
+    goldDrop: 10
+};
+
+// --- ELEMENTOS DO DOM ---
+const gameText = document.getElementById('game-text');
+const actionButtons = document.getElementById('action-buttons');
+const playerHpSpan = document.getElementById('player-hp');
+const playerGoldSpan = document.getElementById('player-gold');
+const sceneImage = document.getElementById('scene-image');
+
+// --- CENA DO JOGO (Estrutura de Conteúdo) ---
+const scenes = {
+    town: {
+        text: "Você está na praça principal da cidade. Para onde você vai?",
+        imageClass: "scene-town",
+        options: [
+            { text: "Entrar na Taverna", nextScene: "tavern" },
+            { text: "Ir para a Floresta", nextScene: "forest" },
+            { text: "Ver Status", action: () => showStatus() }
+        ]
+    },
+    tavern: {
+        text: "A Taverna 'O Barril de Píxel' está movimentada. Você vê um mapa do tesouro!",
+        imageClass: "scene-tavern",
+        options: [
+            { text: "Comprar o Mapa (10 Ouro)", action: () => buyMap() },
+            { text: "Voltar para a Cidade", nextScene: "town" }
+        ]
+    },
+    forest: {
+        text: "Você se aventura na Floresta Sombria. Um Slime te ataca!",
+        imageClass: "scene-forest",
+        options: [
+            { text: "Lutar!", action: () => startCombat() },
+            { text: "Tentar Fugir", action: () => attemptFlee() }
+        ]
+    }
+};
+
+// --- FUNÇÕES DE LÓGICA ---
+
+/** Atualiza a interface (HP, Ouro, etc.) */
+function updateUI() {
+    playerHpSpan.textContent = player.hp;
+    playerGoldSpan.textContent = player.gold;
+}
+
+/** Move o jogador para uma nova cena */
+function goToScene(sceneKey) {
+    if (player.hp <= 0) {
+        return gameOver();
+    }
+    
+    player.isFighting = false;
+    const scene = scenes[sceneKey];
+    gameText.textContent = scene.text;
+    
+    // Atualiza a imagem da cena (apenas a classe para o CSS)
+    sceneImage.className = 'scene-image ' + (scene.imageClass || '');
+
+    // Limpa e recria os botões de ação
+    actionButtons.innerHTML = '';
+    scene.options.forEach(option => {
+        const button = document.createElement('button');
+        button.textContent = option.text;
+        button.className = 'action-btn';
+        
+        if (option.nextScene) {
+            button.onclick = () => goToScene(option.nextScene);
+        } else if (option.action) {
+            button.onclick = option.action;
+        }
+        
+        actionButtons.appendChild(button);
+    });
+    updateUI();
+}
+
+/** Mostra o status do jogador */
+function showStatus() {
+    alert(`Status do Herói:\nHP: ${player.hp}/${player.maxHp}\nAtaque: ${player.attack}\nOuro: ${player.gold}`);
+    goToScene('town'); // Volta para a cidade
+}
+
+/** Tenta comprar o mapa */
+function buyMap() {
+    if (player.gold >= 10) {
+        player.gold -= 10;
+        player.maxHp += 10; // Recompensa: Aumenta HP máximo
+        player.hp += 10; // Cura e aumenta o HP atual
+        gameText.textContent = "Você comprou o mapa do tesouro! Parece que o exercício de carregar o mapa te deixou mais forte! (+10 HP Máx)";
+        updateUI();
+        // Altera as opções da Taverna após a compra
+        scenes.tavern.options = [
+            { text: "Voltar para a Cidade", nextScene: "town" }
+        ];
+    } else {
+        gameText.textContent = "Você não tem ouro suficiente (precisa de 10).";
+    }
+    goToScene('tavern'); // Permanece na Taverna
+}
+
+// --- LÓGICA DE COMBATE ---
+
+function startCombat() {
+    player.isFighting = true;
+    monster.hp = 30; // Reseta HP do monstro
+    gameText.textContent = `UM ${monster.name.toUpperCase()} APARECE! HP: ${monster.hp}. O que você faz?`;
+    
+    actionButtons.innerHTML = '';
+    
+    const attackBtn = document.createElement('button');
+    attackBtn.textContent = "Atacar";
+    attackBtn.className = 'action-btn';
+    attackBtn.onclick = () => combatTurn('attack');
+    actionButtons.appendChild(attackBtn);
+
+    const runBtn = document.createElement('button');
+    runBtn.textContent = "Fugir";
+    runBtn.className = 'action-btn';
+    runBtn.onclick = () => combatTurn('flee');
+    actionButtons.appendChild(runBtn);
+    
+    updateUI();
+}
+
+function combatTurn(action) {
+    if (!player.isFighting) return;
+
+    let combatLog = "";
+
+    if (action === 'attack') {
+        // Ataque do Jogador
+        const playerDamage = player.attack + Math.floor(Math.random() * 5);
+        monster.hp -= playerDamage;
+        combatLog += `Você acerta o ${monster.name} causando ${playerDamage} de dano! `;
+        
+        if (monster.hp <= 0) {
+            return winCombat();
+        }
+    } else if (action === 'flee') {
+        // Tentativa de Fuga
+        if (Math.random() > 0.5) {
+            gameText.textContent = "Você conseguiu fugir!";
+            return goToScene('town');
+        }
+        combatLog += "Você falhou em fugir! ";
+    }
+    
+    // Ataque do Monstro (Se ainda estiver vivo)
+    const monsterDamage = monster.attack + Math.floor(Math.random() * 3);
+    player.hp -= monsterDamage;
+    combatLog += `${monster.name} te ataca causando ${monsterDamage} de dano! `;
+
+    if (player.hp <= 0) {
+        return gameOver();
+    }
+    
+    gameText.textContent = combatLog + `\nSeu HP: ${player.hp}. ${monster.name} HP: ${monster.hp}. Próximo movimento?`;
+    updateUI();
+}
+
+function winCombat() {
+    player.gold += monster.goldDrop;
+    player.isFighting = false;
+    gameText.textContent = `Você derrotou o ${monster.name}! Você encontrou ${monster.goldDrop} de ouro. (+10 HP)`;
+    player.hp = Math.min(player.maxHp, player.hp + 10); // Pequena cura após a vitória
+    
+    // Adiciona um botão para voltar
+    actionButtons.innerHTML = '';
+    const backButton = document.createElement('button');
+    backButton.textContent = "Voltar para a Cidade";
+    backButton.className = 'action-btn';
+    backButton.onclick = () => goToScene('town');
+    actionButtons.appendChild(backButton);
+    
+    updateUI();
+}
+
+function attemptFlee() {
+    gameText.textContent = "Você falhou em fugir e é forçado a lutar!";
+    startCombat();
+}
+
+function gameOver() {
+    player.isFighting = false;
+    gameText.textContent = "FIM DE JOGO! Seu HP chegou a zero. O Slime te derrotou. Atualize a página para tentar novamente.";
+    actionButtons.innerHTML = ''; // Remove todos os botões
+    updateUI();
+}
+
+// --- INICIALIZAÇÃO ---
+goToScene('town');
